@@ -1,24 +1,25 @@
-import die from '../assets/image-removebg-preview.png';
 
 
 interface CardProps {
-    carNumber:number;
+    id:number;
+    frontImage: string;
+    backImage: string;
     isFlipped: boolean;
-    onClick: ()=>void;
-    className?: string;
+    onClick: () => void;
 }
 
 
-const Card: React.FC<CardProps> = ({carNumber, isFlipped, onClick, className}) =>{
+const Card: React.FC<CardProps> = ({id, frontImage, backImage, isFlipped, onClick}) => {
 
     return(
-        <div className= {` w-2/12 h-32 bg-white shadow-md cursor-pointer flex items-center justify-center ${className}`} onClick={onClick}>
-            {!isFlipped ? (<div>
-                <img src= {die} alt="die" />
+        <div style={{ boxShadow: "rgba(0, 0, 0, 0.16) 0px 1px 4px" }} className='w-32 h-32 my-2 overflow-hidden border border-box shrink-0 bg-white hover: cursor-pointer' onClick={onClick}>
+            {!isFlipped ? (<div className="w-full h-full">
+                <img src= {frontImage} alt="Front"  className="w-full h-full object-cover"/>
             </div>)
             :
-            (<div className='text-5xl text-center'>{carNumber}</div>)
-            }
+            (<div className="w-full h-full">
+                <img src= {backImage} alt="Back"  className="w-full h-full object-cover"/>
+            </div>)}
         </div>
     )
 }

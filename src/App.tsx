@@ -1,24 +1,23 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import Home from './pages/home';
-import Game from './components/game';
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Home from "./pages/home";
+import Game from "./pages/game";
 
-
-const router = createBrowserRouter([
+const router = createBrowserRouter ([
   {
     path: '/',
     element: <Home/>
   },
   {
-    path: '/flip-game',
+    path: '/game',
     element: <Game/>
   }
 ])
 
 function App() {
   return (
-    <div className="w-full h-screen flex items-center justify-center;">
+    <main style={{scrollbarWidth: "none"}} className="w-full h-full overflow-auto flex items-center justify-center">
       <RouterProvider router={router}/>
-    </div>
+    </main>
   );
 }
 
