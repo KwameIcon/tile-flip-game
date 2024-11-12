@@ -114,7 +114,7 @@ const Game: React.FC = () => {
     } else if (flipCount >= maxFlip) {
       setModalMessage({
         title: "Game Over!",
-        subTitle: `Flip limit exceeded for this round`,
+        subTitle: `Flip limit exceeded. You scored ${scores}`,
         actionText: 'Try again',
         textColor: 'red',
       });
