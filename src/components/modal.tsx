@@ -8,9 +8,10 @@ interface modalProps{
     textColor?: string;
     setRestart: React.Dispatch<React.SetStateAction<boolean>>;
     setIsGameComplete: React.Dispatch<React.SetStateAction<boolean>>;
+    setIsStartGame:React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const Modal: React.FC<modalProps> = ({title, subTitle, actionText, textColor, setRestart, setIsGameComplete}) => {
+const Modal: React.FC<modalProps> = ({title, subTitle, actionText, textColor, setRestart, setIsGameComplete, setIsStartGame}) => {
 
     const navigate = useNavigate();
 
@@ -18,14 +19,16 @@ const Modal: React.FC<modalProps> = ({title, subTitle, actionText, textColor, se
         if(textColor === 'red'){
             setIsGameComplete(false);
             setRestart(true);
+            setIsStartGame(true);
         }else{
+            setIsStartGame(false);
             navigate(-1);
         }
     }
 
     return(
         <div className=" fixed top-0 w-full h-screen bg-black bg-opacity-90 flex flex-col items-center justify-center">
-            <h1 className={`text-${textColor}-500 text-7xl capitalize font-bold my-2`}>{title}</h1>
+            <h1 className={`text-${textColor}-500 text-5xl sm:text-5xl lg:text-7xl text-center capitalize font-bold my-2`}>{title}</h1>
             <p className="text-2xl text-white mt-3">{subTitle}</p>
             <button className={`mt-3 py-2 px-3 ${textColor ==='red' ? 'bg-black' : 'bg-green-500'} text-white rounded`} onClick={handleGameRestart}>{actionText}</button>
         </div>
