@@ -29,7 +29,7 @@ const Modal: React.FC<modalProps> = ({title, subTitle, actionText, textColor, se
     return(
         <div className=" fixed top-0 w-full h-screen bg-black bg-opacity-90 flex flex-col items-center justify-center">
             <h1 className={`text-${textColor}-500 text-5xl sm:text-5xl lg:text-7xl text-center capitalize font-bold my-2`}>{title}</h1>
-            <p className="text-2xl text-white mt-3">{subTitle}</p>
+            <p className="text-2xl text-white text-center mt-3">{subTitle}</p>
             <button className={`mt-3 py-2 px-3 ${textColor ==='red' ? 'bg-black' : 'bg-green-500'} text-white rounded`} onClick={handleGameRestart}>{actionText}</button>
         </div>
     )
