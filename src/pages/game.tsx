@@ -6,13 +6,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowCircleLeft } from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "react-router-dom";
 import StartGame from "../components/startGameModal";
+import ConfirmCard from "../components/confirmCard";
+import Guide from "../components/guide";
 
 // sounds
 import mismatchSound from '../assets/error-126627.mp3';
 import matchSound from '../assets/matched.wav';
 import backgroundSound from '../assets/relaxing-guitar-loop-v5-245859.mp3';
-import ConfirmCard from "../components/confirmCard";
-import Guide from "../components/guide";
+import gameWon from '../assets/brass-fanfare-reverberated-146263.mp3'
+import gameOver from '../assets/videogame-death-sound-43894.mp3';
 
 interface GameProps {
   id: number;
@@ -55,6 +57,8 @@ const Game: React.FC = () => {
   const match = new Audio(matchSound);
   const notMatch = new Audio(mismatchSound);
   const bgSound = new Audio(backgroundSound);
+  const gameWonSoudn = new Audio(gameWon);
+  const gameOverSound = new Audio(gameOver);
 
 
 
@@ -81,10 +85,6 @@ const Game: React.FC = () => {
  
   useEffect(() => {
     initializeGame();
-    if(isStartGame){
-      bgSound.loop = true;
-      bgSound.play();
-    }
 
     level === 'easy' ? setStartMessage('Test Your Memory, Match the Tiles!') : level === 'medium' ? setStartMessage('Challenge Yourself, Step Up the Game!') : setStartMessage('Ultimate Test, Master Your Memory!');
 
@@ -95,11 +95,20 @@ const Game: React.FC = () => {
       localStorage.setItem('hasSeen', 'true');
     }
 
+  }, [level]);
+
+
+  useEffect(() => {
+    if(!isGameComplete && isStartGame){
+      bgSound.loop = true;
+      bgSound.play();
+    }
+
     return(() => {
       bgSound.pause();
       bgSound.currentTime = 0;
     })
-  }, [level, isStartGame,]);
+  },[isStartGame, isGameComplete])
 
   // Check game completion based on flips and matched cards
   useEffect(() => {
@@ -110,6 +119,7 @@ const Game: React.FC = () => {
         actionText: 'Start a new game',
         textColor: 'green',
       });
+      gameWonSoudn.play();
       setIsGameComplete(true);
     } else if (flipCount >= maxFlip) {
       setModalMessage({
@@ -118,6 +128,7 @@ const Game: React.FC = () => {
         actionText: 'Try again',
         textColor: 'red',
       });
+      gameOverSound.play();
       setIsGameComplete(true);
     }
   }, [flipCount, cards, maxFlip]);
@@ -213,8 +224,9 @@ const Game: React.FC = () => {
           />
         ))}
       </div>
-      {isGameComplete && <Modal {...modalMessage} setRestart={setRestart} setIsGameComplete={setIsGameComplete} setIsStartGame = {setIsStartGame}/>}
+
       {!isStartGame && <StartGame setIsStartGame = {setIsStartGame} startMessage = {startMessage}/>}
+      {isGameComplete && <Modal {...modalMessage} setRestart={setRestart} setIsGameComplete={setIsGameComplete} setIsStartGame = {setIsStartGame}/>}
       {isQuitting && <ConfirmCard setIsQuitting = {setIsQuitting}/>}
       {(!hasSeen && isStartGame) ? <Guide setHasSeen = {setHasSeen}/> : ''}
     </div>
