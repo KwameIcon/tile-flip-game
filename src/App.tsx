@@ -15,7 +15,7 @@ const router = createBrowserRouter ([
 
 function App() {
   return (
-    <main style={{scrollbarWidth: "none"}} className="w-full h-screen overflow-auto flex items-center justify-center border-box">
+    <main style={{scrollbarWidth: "none"}} className="w-screen h-screen overflow-x-hidden overflow-y-auto flex items-center justify-center border-box">
       <RouterProvider router={router}/>
     </main>
   );

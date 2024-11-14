@@ -1,20 +1,23 @@
 import { useEffect, useState } from "react";
 import Card from "../components/card";
-import { CARDSDATA, HIDDENIMAGES } from "../service/CARDSDATA";
-import Modal from "../components/modal";
+import GameResults from "../components/modals/gameResults";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowCircleLeft } from "@fortawesome/free-solid-svg-icons";
+import { faArrowCircleLeft, faVolumeMute, faVolumeUp } from "@fortawesome/free-solid-svg-icons";
 import { useSearchParams } from "react-router-dom";
-import StartGame from "../components/startGameModal";
-import ConfirmCard from "../components/confirmCard";
-import Guide from "../components/guide";
+import StartGame from "../components/modals/startGameModal";
+import ConfirmGameExit from "../components/modals/confirmGameExit";
+import UserGuide from "../components/modals/userGuide";
+import { startCountDown } from "../utils/startCountDown";
 
 // sounds
-import mismatchSound from '../assets/error-126627.mp3';
-import matchSound from '../assets/matched.wav';
-import backgroundSound from '../assets/relaxing-guitar-loop-v5-245859.mp3';
-import gameWon from '../assets/brass-fanfare-reverberated-146263.mp3'
-import gameOver from '../assets/videogame-death-sound-43894.mp3';
+import mismatchSound from '../assets/sounds/error-126627.mp3';
+import matchSound from '../assets/sounds/matched.wav';
+import backgroundSound from '../assets/sounds/relaxing-guitar-loop-v5-245859.mp3';
+import gameWon from '../assets/sounds/brass-fanfare-reverberated-146263.mp3'
+import gameOver from '../assets/sounds/videogame-death-sound-43894.mp3';
+import { initializeGame } from "../utils/initializeGame";
+import { EndGame } from "../utils/endGame";
+import { FlipCards } from "../utils/flipCards";
 
 interface GameProps {
   id: number;
@@ -31,14 +34,17 @@ interface ModalMessages {
   textColor?: string;
 }
 
+
+
 const Game: React.FC = () => {
+
+  // states
   const [cards, setCards] = useState<GameProps[]>([]);
   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
   const [flipCount, setFlipCount] = useState(0);
   const [maxFlip, setMaxFlip] = useState<number>(40);
   const [scores, setScores] = useState(0);
   const [msg, setMsg] = useState('');
-  // const [msgColor, setMsgColor] = useState('');
   const [msgBgColor, setMsgBgColor] = useState('');
   const [startMessage, setStartMessage] = useState('');
   const [isGameComplete, setIsGameComplete] = useState(false);
@@ -47,7 +53,10 @@ const Game: React.FC = () => {
   const [hasSeen, setHasSeen] = useState(true);
   const [modalMessage, setModalMessage] = useState<ModalMessages>({});
   const [restart, setRestart] = useState(false);
+  const [time, setTime] = useState('');
+  const [isMuted, setIsMuted] = useState(false);
 
+  // retrieve game level from parameter
   const [searchParam] = useSearchParams();
   const level = searchParam.get('level');
 
@@ -57,162 +66,115 @@ const Game: React.FC = () => {
   const match = new Audio(matchSound);
   const notMatch = new Audio(mismatchSound);
   const bgSound = new Audio(backgroundSound);
-  const gameWonSoudn = new Audio(gameWon);
+  const gameWonSound = new Audio(gameWon);
   const gameOverSound = new Audio(gameOver);
 
 
-
-  // Initialize or reset the game cards and settings based on level
-  const initializeGame = () => {
-    const pairedCards = [...CARDSDATA, ...CARDSDATA].map((card) => ({
-      id: card.id,
-      frontImage: card.frontImage,
-      backImage: card.backImage,
-      isFlipped: false,
-      isMatched: false,
-    }));
-    const shuffleHiddenImages = [...HIDDENIMAGES, ...HIDDENIMAGES].sort(() => Math.random() - 0.5);
-    pairedCards.forEach((card, i) => (card.backImage = shuffleHiddenImages[i]));
-    setCards(pairedCards);
-    setFlipCount(0);
-    setFlippedIndices([]);
-    setIsGameComplete(false);
-    setMsg('');
-    setModalMessage({});
-    setMaxFlip(level === 'easy' ? 45 : level === 'medium' ? 35 : 30);
-  };
-
  
+//  itialize game
   useEffect(() => {
-    initializeGame();
+    initializeGame({setCards, setFlipCount, setFlippedIndices, setIsGameComplete, setMsg, setModalMessage, setMaxFlip, level});
+      setRestart(false);
+      setScores(0)
+  }, [level, restart]);
 
-    level === 'easy' ? setStartMessage('Test Your Memory, Match the Tiles!') : level === 'medium' ? setStartMessage('Challenge Yourself, Step Up the Game!') : setStartMessage('Ultimate Test, Master Your Memory!');
 
-    let hasSeemMessage = localStorage.getItem('hasSeen');
 
-    if(!hasSeemMessage){
+  // dynamically display start game modal message based on game level and timer
+   useEffect(() => {
+    let countdownInterval: any = null;
+    let hasSeenMessage = localStorage.getItem('hasSeen');
+    if (!hasSeenMessage) {
       setHasSeen(false);
       localStorage.setItem('hasSeen', 'true');
     }
+    if (level === 'easy') {
+      setStartMessage('Test Your Memory, Match the Tiles!');
+    } else if (level === 'medium') {
+      if (isStartGame && !isGameComplete && hasSeen) {
+        countdownInterval = startCountDown(5, 0, setTime);
+      }
+      setStartMessage('Challenge Yourself, Step Up the Game!');
+    } else {
+      if (isStartGame && !isGameComplete && hasSeen) {
+        countdownInterval = startCountDown(3, 30, setTime);
+      }
+      setStartMessage('Ultimate Test, Master Your Memory!');
+    }
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+      setTime(''); 
+    };
+  }, [level, hasSeen, isGameComplete, isStartGame, setTime, setHasSeen,]);
 
-  }, [level]);
 
 
+
+// control background sound
   useEffect(() => {
-    if(!isGameComplete && isStartGame){
+    if(!isGameComplete && isStartGame && !isMuted){
       bgSound.loop = true;
       bgSound.play();
     }
-
     return(() => {
       bgSound.pause();
       bgSound.currentTime = 0;
     })
-  },[isStartGame, isGameComplete])
+  },[isStartGame, isGameComplete, isMuted]);
+
+
+  
 
   // Check game completion based on flips and matched cards
   useEffect(() => {
-    if (cards.length > 0 && cards.every((card) => card.isMatched)) {
-      setModalMessage({
-        title: "Congratulations, you've won!",
-        subTitle: `You scored ${scores} in ${flipCount} flips`,
-        actionText: 'Start a new game',
-        textColor: 'green',
-      });
-      gameWonSoudn.play();
-      setIsGameComplete(true);
-    } else if (flipCount >= maxFlip) {
-      setModalMessage({
-        title: "Game Over!",
-        subTitle: `Flip limit exceeded. You scored ${scores}`,
-        actionText: 'Try again',
-        textColor: 'red',
-      });
-      gameOverSound.play();
-      setIsGameComplete(true);
-    }
-  }, [flipCount, cards, maxFlip]);
+    EndGame({setModalMessage, cards, scores, flipCount, gameWonSound, gameOverSound, setIsGameComplete, setIsStartGame, maxFlip, time, level});
+  }, [flipCount, cards, maxFlip, time]);
 
-  // Reset game if restart is triggered
-  useEffect(() => {
-    if (restart) {
-      initializeGame();
-      setRestart(false);
-      setScores(0)
-    }
-  }, [restart]);
 
+// handle card flips
   const handleCardFlip = (index: number) => {
-    if (cards[index]?.isFlipped || cards[index]?.isMatched || flippedIndices.length === 2) return;
-
-    const newFlippedIndices = [...flippedIndices, index];
-    setFlippedIndices(newFlippedIndices);
-    setFlipCount((count) => count + 1);
-
-    // Flip card logic
-    const updatedCards = cards.map((card, i) =>
-      i === index ? { ...card, isFlipped: true } : card
-    );
-    setCards(updatedCards);
-
-    // Check for matches if two cards are flipped
-    if (newFlippedIndices.length === 2) {
-      const [firstIndex, secondIndex] = newFlippedIndices;
-      if (cards[firstIndex].backImage === cards[secondIndex].backImage) {
-        setCards((prevCards) =>
-          prevCards.map((card, i) =>
-            i === firstIndex || i === secondIndex ? { ...card, isMatched: true } : card
-          )
-        );
-        setScores((prev) => prev + 5);
-        match.play();
-        setMsg('Matched! Great work!');
-        setMsgBgColor('green');
-        setTimeout(() => {
-          setMsg('')
-          setMsgBgColor('')
-        },1000)
-      } else {
-        notMatch.play();
-        setTimeout(() => {
-          setCards((prevCards) =>
-            prevCards.map((card, i) =>
-              i === firstIndex || i === secondIndex ? { ...card, isFlipped: false } : card
-            )
-          );
-        }, 500);
-      }
-      setFlippedIndices([]);
-    }
+    FlipCards({cards, index, flippedIndices, setFlippedIndices, setFlipCount, setCards, setScores, match, setMsg, setMsgBgColor, notMatch});
   };
 
+
+// jsx
   return (
-    <div style={{ backgroundColor: '#faf3f3', scrollbarWidth: 'none' }} className="w-full h-screen overflow-auto flex items-center justify-start flex-col p-2 relative">
-      <header>
+    <div style={{ backgroundColor: '#faf3f3', scrollbarWidth: 'none' }} className="w-screen h-screen overflow-y-auto overflow-x-hidden flex items-center justify-start flex-col p-2">
 
-        <h1 className="text-4xl opacity-80 font-bold mb-4 ml-7">Tile Reveal Game</h1>
-        <div className="flex items-center justify-center space-x-5 sm:space-x-5 lg:space-x-10 bg-green-600 p-2">
-          <FontAwesomeIcon icon={faArrowCircleLeft} className="text-xl cursor-pointer" 
-          onClick={() => 
-                    {
-                      setIsQuitting(true)
-                    }
-                  } />
-
-          <div className="flex items-center space-x-4">
-            <h3 className="text-normal sm:text-xl lg:text-2xl font-bold text-white">Flip Count</h3>
-            <div className="px-2 py-1 bg-black text-white rounded-2xl">{flipCount}/{maxFlip}</div>
-            <div className={`px-2 py-1 bg-white text-green-600 rounded-xl text-xl`}>{scores}</div>
-            <div className="px-1 py-1 bg-white text-green-600 rounded-xl text-xl">{level}</div>
+      {/* header */}
+      <header className="w-screen flex flex-col items-center">
+        <h1 className="w-screen overflow-hidden text-center text-4xl opacity-80 font-bold mb-4">Tile Reveal Game</h1>
+        <div className="grid grid-cols-3 gap-2 sm:grid sm:grid-cols-3 sm:gap-2 lg:flex lg:items-center lg:justify-center lg:space-x-2 sm:space-x-5 bg-green-600 p-2">
+          <div className="text-center text-xl cursor-pointer" onClick={() => {setIsQuitting(true)}} >
+            <FontAwesomeIcon icon={faArrowCircleLeft}/>
+          </div>
+          <h3 className=" flex items-center justify-center space-x-1">
+            <p className="text-xl sm:text-xl lg:text-2xl font-bold text-white">Flips</p>
+            <span className="px-2 py-1 bg-black text-white text-center rounded-2xl">{flipCount}/{maxFlip}</span>
+          </h3>
+          <div className={`px-2 py-1 bg-white text-green-600 rounded-xl text-xl text-center`}>{scores}</div>
+          <div className="px-1 py-1 bg-white text-green-600 rounded-xl text-xl text-center">{level}</div>
+          {time && <div className="px-1 py-1 bg-white text-green-600 rounded-xl text-xl text-center">{time}</div>}
+          <div className="px-1 py-1 bg-white text-green-600 rounded-xl text-xl text-center">
+            {
+              isMuted ? 
+                (<FontAwesomeIcon icon={faVolumeMute} onClick={() => setIsMuted((prev) => !prev)} className="cursor-pointer"/> ) 
+              :
+                (<FontAwesomeIcon icon={faVolumeUp} onClick={() => setIsMuted((prev) => !prev)} className="cursor-pointer"/>)
+            }
           </div>
         </div>
       </header>
 
-      <div className="absolute top-28 w-full text-center mt-3 text-xl">
-        <p className={`w-max mx-auto px-3 bg-${msgBgColor}-600 text-white rounded`}>{msg}</p>
+      {/* display messages */}
+      <div className="fixed top-28 w-screen text-center mt-3 text-xl">
+        <p className={`w-max mx-auto px-3 bg-${msgBgColor}-600 bg-opacity-80 text-white rounded  `}>{msg}</p>
       </div>
 
-      <div className="w-full sm:w-full lg:w-3/6 m-auto mt-8 grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 relative">
+      {/* cards section */}
+      <div className="w-screen sm:w-screen lg:w-3/6 m-auto mt-8 grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 relative -ml-2 lg:ml-auto p-2">
         {cards.map((card, index) => (
           <Card
             key={index}
@@ -225,10 +187,14 @@ const Game: React.FC = () => {
         ))}
       </div>
 
-      {!isStartGame && <StartGame setIsStartGame = {setIsStartGame} startMessage = {startMessage}/>}
-      {isGameComplete && <Modal {...modalMessage} setRestart={setRestart} setIsGameComplete={setIsGameComplete} setIsStartGame = {setIsStartGame}/>}
-      {isQuitting && <ConfirmCard setIsQuitting = {setIsQuitting}/>}
-      {(!hasSeen && isStartGame) ? <Guide setHasSeen = {setHasSeen}/> : ''}
+
+      {/* modals */}
+      {(!isStartGame && !isGameComplete) && <StartGame setIsStartGame = {setIsStartGame} startMessage = {startMessage}/>}
+      {isGameComplete && <GameResults {...modalMessage} setRestart={setRestart} setIsGameComplete={setIsGameComplete} setIsStartGame = {setIsStartGame}/>}
+      {isQuitting && <ConfirmGameExit setIsQuitting = {setIsQuitting}/>}
+      {(!hasSeen && isStartGame) ? <UserGuide setHasSeen = {setHasSeen}/> : ''}
+
+
     </div>
   );
 };
