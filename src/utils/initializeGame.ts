@@ -1,7 +1,7 @@
 import { CARDSDATA, HIDDENIMAGES } from "../service/CARDSDATA";
 
 
-interface GameProps {
+interface CardProps {
   id: number;
   frontImage: string;
   backImage: string;
@@ -10,7 +10,7 @@ interface GameProps {
 }
 
 interface InitializeGameProps {
-  setCards: React.Dispatch<React.SetStateAction<GameProps[]>>;
+  setCards: React.Dispatch<React.SetStateAction<CardProps[]>>;
   setFlipCount: React.Dispatch<React.SetStateAction<number>>;
   setFlippedIndices: React.Dispatch<React.SetStateAction<number[]>>;
   setIsGameComplete: React.Dispatch<React.SetStateAction<boolean>>;
@@ -24,7 +24,8 @@ interface InitializeGameProps {
 // Initialize or reset the game cards and settings based on level
 export const initializeGame = ({setCards, setFlipCount, setFlippedIndices, setIsGameComplete, setMsg,
   setModalMessage, setMaxFlip, level,}: InitializeGameProps): void => {
-  const pairedCards = [...CARDSDATA, ...CARDSDATA].map((card) => ({
+
+  const cards = [...CARDSDATA].map((card) => ({
     id: card.id,
     frontImage: card.frontImage,
     backImage: card.backImage,
@@ -33,9 +34,9 @@ export const initializeGame = ({setCards, setFlipCount, setFlippedIndices, setIs
   }));
   
   const shuffleHiddenImages = [...HIDDENIMAGES, ...HIDDENIMAGES].sort(() => Math.random() - 0.5);
-  pairedCards.forEach((card, i) => (card.backImage = shuffleHiddenImages[i]));
+  cards.forEach((card, i) => (card.backImage = shuffleHiddenImages[i]));
   
-  setCards(pairedCards);
+  setCards(cards);
   setFlipCount(0);
   setFlippedIndices([]);
   setIsGameComplete(false);

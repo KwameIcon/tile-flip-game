@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import winBackgroundImage from '../../assets/confetti.gif';
-import loseBackgroundImage from '../../assets/dg0esj4-5e137e76-1c6a-4603-8342-9e24afc4f3c6.gif';
+import winBackgroundImage from '../../assets/images/endGame/confetti.gif';
+import loseBackgroundImage from '../../assets/images/endGame/gamelost.gif';
 
 interface modalProps{
     title?: string;

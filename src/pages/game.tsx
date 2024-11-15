@@ -7,7 +7,12 @@ import { useSearchParams } from "react-router-dom";
 import StartGame from "../components/modals/startGameModal";
 import ConfirmGameExit from "../components/modals/confirmGameExit";
 import UserGuide from "../components/modals/userGuide";
+
+// utils
 import { startCountDown } from "../utils/startCountDown";
+import { initializeGame } from "../utils/initializeGame";
+import { EndGame } from "../utils/endGame";
+import { FlipCards } from "../utils/flipCards";
 
 // sounds
 import mismatchSound from '../assets/sounds/error-126627.mp3';
@@ -15,11 +20,10 @@ import matchSound from '../assets/sounds/matched.wav';
 import backgroundSound from '../assets/sounds/relaxing-guitar-loop-v5-245859.mp3';
 import gameWon from '../assets/sounds/brass-fanfare-reverberated-146263.mp3'
 import gameOver from '../assets/sounds/videogame-death-sound-43894.mp3';
-import { initializeGame } from "../utils/initializeGame";
-import { EndGame } from "../utils/endGame";
-import { FlipCards } from "../utils/flipCards";
 
-interface GameProps {
+
+// type states
+interface CardProps {
   id: number;
   frontImage: string;
   backImage: string;
@@ -39,14 +43,14 @@ interface ModalMessages {
 const Game: React.FC = () => {
 
   // states
-  const [cards, setCards] = useState<GameProps[]>([]);
+  const [cards, setCards] = useState<CardProps[]>([]);
   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
   const [flipCount, setFlipCount] = useState(0);
   const [maxFlip, setMaxFlip] = useState<number>(40);
   const [scores, setScores] = useState(0);
   const [msg, setMsg] = useState('');
   const [msgBgColor, setMsgBgColor] = useState('');
-  const [startMessage, setStartMessage] = useState('');
+  const [startGameMessage, setStartGameMessage] = useState('');
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [isStartGame, setIsStartGame] = useState(false);
   const [isQuitting, setIsQuitting] = useState(false);
@@ -56,7 +60,7 @@ const Game: React.FC = () => {
   const [time, setTime] = useState('');
   const [isMuted, setIsMuted] = useState(false);
 
-  // retrieve game level from parameter
+  // retrieve game level from url parameter
   const [searchParam] = useSearchParams();
   const level = searchParam.get('level');
 
@@ -89,17 +93,17 @@ const Game: React.FC = () => {
       localStorage.setItem('hasSeen', 'true');
     }
     if (level === 'easy') {
-      setStartMessage('Test Your Memory, Match the Tiles!');
+      setStartGameMessage('Test Your Memory, Match the Tiles!');
     } else if (level === 'medium') {
       if (isStartGame && !isGameComplete && hasSeen) {
         countdownInterval = startCountDown(5, 0, setTime);
       }
-      setStartMessage('Challenge Yourself, Step Up the Game!');
+      setStartGameMessage('Challenge Yourself, Step Up the Game!');
     } else {
       if (isStartGame && !isGameComplete && hasSeen) {
         countdownInterval = startCountDown(3, 30, setTime);
       }
-      setStartMessage('Ultimate Test, Master Your Memory!');
+      setStartGameMessage('Ultimate Test, Master Your Memory!');
     }
     return () => {
       if (countdownInterval) {
@@ -141,7 +145,7 @@ const Game: React.FC = () => {
 
 // jsx
   return (
-    <div style={{ backgroundColor: '#faf3f3', scrollbarWidth: 'none' }} className="w-screen h-screen overflow-y-auto overflow-x-hidden flex items-center justify-start flex-col p-2">
+    <div style={{ backgroundColor: '#faf3f3', scrollbarWidth: 'none' }} className="w-screen h-screen overflow-y-auto overflow-x-hidden flex items-center justify-start flex-col p-2 relative">
 
       {/* header */}
       <header className="w-screen flex flex-col items-center">
@@ -169,7 +173,7 @@ const Game: React.FC = () => {
       </header>
 
       {/* display messages */}
-      <div className="fixed top-28 w-screen text-center mt-3 text-xl">
+      <div className="absolute top-28 w-screen text-center mt-3 text-xl">
         <p className={`w-max mx-auto px-3 bg-${msgBgColor}-600 bg-opacity-80 text-white rounded  `}>{msg}</p>
       </div>
 
@@ -189,7 +193,7 @@ const Game: React.FC = () => {
 
 
       {/* modals */}
-      {(!isStartGame && !isGameComplete) && <StartGame setIsStartGame = {setIsStartGame} startMessage = {startMessage}/>}
+      {(!isStartGame && !isGameComplete) && <StartGame setIsStartGame = {setIsStartGame} startMessage = {startGameMessage}/>}
       {isGameComplete && <GameResults {...modalMessage} setRestart={setRestart} setIsGameComplete={setIsGameComplete} setIsStartGame = {setIsStartGame}/>}
       {isQuitting && <ConfirmGameExit setIsQuitting = {setIsQuitting}/>}
       {(!hasSeen && isStartGame) ? <UserGuide setHasSeen = {setHasSeen}/> : ''}

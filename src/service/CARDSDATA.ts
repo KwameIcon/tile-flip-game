@@ -1,4 +1,4 @@
-import FrontImage from '../assets/images/image-removebg-preview.png';
+import FrontImage from '../assets/images/card-front.png';
 
 // flags
 import Ghana from '../assets/images/flags/Flag_of_Ghana.svg'
@@ -48,6 +48,46 @@ export var CARDSDATA = [
     },
     {
         id: 8,
+        backImage: '',
+        frontImage: `${FrontImage}`
+    },
+    {
+        id: 9,
+        backImage: '',
+        frontImage: `${FrontImage}`
+    },
+    {
+        id: 10,
+        backImage: '',
+        frontImage: `${FrontImage}`
+    },
+    {
+        id: 11,
+        backImage: '',
+        frontImage: `${FrontImage}`
+    },
+    {
+        id: 12,
+        backImage: '',
+        frontImage: `${FrontImage}`
+    },
+    {
+        id: 13,
+        backImage: '',
+        frontImage: `${FrontImage}`
+    },
+    {
+        id: 14,
+        backImage: '',
+        frontImage: `${FrontImage}`
+    },
+    {
+        id: 15,
+        backImage: '',
+        frontImage: `${FrontImage}`
+    },
+    {
+        id: 16,
         backImage: '',
         frontImage: `${FrontImage}`
     }
